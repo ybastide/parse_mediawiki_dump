@@ -61,12 +61,13 @@
 
 #![forbid(unsafe_code)]
 
-extern crate quick_xml;
+use std::io::BufRead;
+
+use quick_xml::{events::Event, name::ResolveResult, NsReader};
+
+use schema::Namespace;
 
 pub mod schema;
-use quick_xml::{events::Event, name::ResolveResult, NsReader};
-use schema::Namespace;
-use std::io::BufRead;
 enum PageChildElement {
     Ns,
     Revision,
@@ -87,12 +88,12 @@ pub enum Error {
     /// Format not matching expectations.
     ///
     /// Indicates the position in the stream.
-    Format(usize),
+    Format(u64),
 
     /// The source contains a feature not supported by the parser.
     ///
     /// In particular, this means a `page` element contains more than one `revision` element.
-    NotSupported(usize),
+    NotSupported(u64),
 
     /// Error from the XML reader.
     XmlReader(quick_xml::Error),
@@ -179,7 +180,7 @@ fn match_namespace(namespace: ResolveResult<'_>) -> bool {
     matches!(
         namespace,
         ResolveResult::Bound(quick_xml::name::Namespace(
-            b"http://www.mediawiki.org/xml/export-0.10/",
+            b"http://www.mediawiki.org/xml/export-0.11/",
         ))
     )
 }
@@ -308,7 +309,7 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
 /// The stream is parsed as an XML dump exported from Mediawiki. The parser is an iterator over the pages in the dump.
 pub fn parse<R: BufRead>(source: R) -> Parser<R> {
     let mut reader = NsReader::from_reader(source);
-    reader.expand_empty_elements(true);
+    reader.config_mut().expand_empty_elements = true;
     Parser {
         buffer: vec![],
         reader,

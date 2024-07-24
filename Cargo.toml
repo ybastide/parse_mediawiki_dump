@@ -1,21 +1,19 @@
 [package]
 name = "parse_mediawiki_dump_reboot"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
-authors = ["Fredrik Portström <https://portstrom.com>","Olivier ROLAND <newca12@users.noreply.github.com>"]
+authors = ["Fredrik Portström <https://portstrom.com>", "Olivier ROLAND <newca12@users.noreply.github.com>"]
 description = "Parse XML dumps exported from Mediawiki"
 keywords = ["mediawiki"]
-categories = ["parsing","text-processing"]
+categories = ["parsing", "text-processing"]
 license = "MIT"
 readme = "readme.md"
 repository = "https://github.com/newca12/parse_mediawiki_dump"
 
 [dependencies]
-serde = {version="1.0.188", features=["derive"]}
+bzip2 = "0.4.4"
+quick-xml = "0.36.1"
+serde = { version = "1.0.188", features = ["derive"] }
 
 [[example]]
 name = "main"
-[dependencies.quick-xml]
-version = "0.30.0"
-[dev-dependencies.bzip2]
-version = "0.4.4"

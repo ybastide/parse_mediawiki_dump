@@ -3,9 +3,8 @@
 // This is free software distributed under the terms specified in
 // the file LICENSE at the top-level directory of this distribution.
 
-use parse_mediawiki_dump_reboot::schema::Namespace;
-
 extern crate parse_mediawiki_dump_reboot;
+use parse_mediawiki_dump_reboot::schema::Namespace;
 
 const DUMP: &str = concat!(
     r#"<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/">"#,
@@ -44,11 +43,10 @@ fn main() {
     });
     assert!(match parser.next() {
         Some(Ok(parse_mediawiki_dump_reboot::Page {
-            format: None,
-            model: None,
             namespace: Namespace::Wikipedia,
             text,
             title,
+            ..
         })) => text == "zeta" && title == "epsilon",
         _ => false,
     });

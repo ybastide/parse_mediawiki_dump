@@ -78,6 +78,7 @@ enum RevisionChildElement {
     Format,
     Model,
     Text,
+    Id,
     Unknown,
 }
 
@@ -96,6 +97,9 @@ pub enum Error {
 
     /// Error from the XML reader.
     XmlReader(quick_xml::Error),
+
+    /// Parse error.
+    ParseInt(u64),
 }
 
 /// Parsed page.
@@ -135,6 +139,11 @@ pub struct Page {
     ///
     /// Parsed from the text content of the `title` element in the `page` element.
     pub title: String,
+
+    /// The page ID.
+    ///
+    /// Parsed from the text content of the `id` element in the `revision` element.
+    pub id: u64,
 }
 
 /// Parser working as an iterator over pages.
@@ -154,6 +163,10 @@ impl std::fmt::Display for Error {
                 position
             ),
             Error::XmlReader(error) => error.fmt(formatter),
+            Error::ParseInt(position) => write!(
+                formatter,
+                "Failed to parse integer value at position {position}"
+            ),
         }
     }
 }
@@ -204,11 +217,7 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
     }
     loop {
         parser.buffer.clear();
-        if !match parser
-            .reader
-            //.read_namespaced_event(&mut parser.buffer, &mut parser.namespace_buffer)?
-            .read_resolved_event_into(&mut parser.buffer)?
-        {
+        if !match parser.reader.read_resolved_event_into(&mut parser.buffer)? {
             (_, Event::End(_)) => return Ok(None),
             (namespace, Event::Start(event)) => {
                 match_namespace(namespace) && event.local_name().as_ref() == b"page"
@@ -223,17 +232,19 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
         let mut namespace = None;
         let mut text = None;
         let mut title = None;
+        let mut id = None;
         loop {
             parser.buffer.clear();
             match match parser.reader.read_resolved_event_into(&mut parser.buffer)? {
                 (_, Event::End(_)) => {
-                    return match (namespace, text, title) {
-                        (Some(namespace), Some(text), Some(title)) => Ok(Some(Page {
+                    return match (namespace, text, title, id) {
+                        (Some(namespace), Some(text), Some(title), Some(id)) => Ok(Some(Page {
                             format,
                             model,
                             namespace,
                             text,
                             title,
+                            id,
                         })),
                         _ => Err(Error::Format(
                             parser.reader.buffer_position().try_into().unwrap(),
@@ -288,6 +299,7 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
                                         b"format" => RevisionChildElement::Format,
                                         b"model" => RevisionChildElement::Model,
                                         b"text" => RevisionChildElement::Text,
+                                        b"id" => RevisionChildElement::Id,
                                         _ => RevisionChildElement::Unknown,
                                     }
                                 } else {
@@ -303,6 +315,7 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
                                 model = Some(parse_text(parser, &model)?)
                             }
                             RevisionChildElement::Text => text = Some(parse_text(parser, &text)?),
+                            RevisionChildElement::Id => id = Some(parse_u64(parser, &text)?),
                             RevisionChildElement::Unknown => skip_element(parser)?,
                         }
                     }
@@ -366,6 +379,12 @@ fn parse_text(
             parser.reader.buffer_position().try_into().unwrap(),
         ))
     }
+}
+
+fn parse_u64(parser: &mut Parser<impl BufRead>, output: &Option<impl Sized>) -> Result<u64, Error> {
+    let text = parse_text(parser, &output)?;
+    text.parse::<u64>()
+        .map_err(|_| Error::ParseInt(parser.reader.buffer_position()))
 }
 
 fn skip_element(parser: &mut Parser<impl BufRead>) -> Result<(), quick_xml::Error> {

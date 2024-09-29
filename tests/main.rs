@@ -12,6 +12,7 @@ const DUMP: &str = concat!(
     "<ns>0</ns>",
     "<title>alpha</title>",
     "<revision>",
+    "<id>1</id>",
     "<format>beta</format>",
     "<model>gamma</model>",
     "<text>delta</text>",
@@ -21,6 +22,7 @@ const DUMP: &str = concat!(
     "<ns>4</ns>",
     "<title>epsilon</title>",
     "<revision>",
+    "<id>2</id>",
     "<text>zeta</text>",
     "</revision>",
     "</page>",
@@ -38,7 +40,8 @@ fn main() {
             namespace: Namespace::Main,
             text,
             title,
-        })) => format == "beta" && model == "gamma" && text == "delta" && title == "alpha",
+            id,
+        })) => format == "beta" && model == "gamma" && text == "delta" && title == "alpha" && id == 1,
         _ => false,
     });
     assert!(match parser.next() {
@@ -46,8 +49,9 @@ fn main() {
             namespace: Namespace::Wikipedia,
             text,
             title,
+            id,
             ..
-        })) => text == "zeta" && title == "epsilon",
+        })) => text == "zeta" && title == "epsilon" && id == 2,
         _ => false,
     });
     assert!(parser.next().is_none());

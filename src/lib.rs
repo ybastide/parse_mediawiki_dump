@@ -144,7 +144,7 @@ pub struct Page {
     /// The page ID.
     ///
     /// Parsed from the text content of the `id` element in the `revision` element.
-    pub id: u64,
+    pub id: u32,
 }
 
 /// Parser working as an iterator over pages.
@@ -302,7 +302,7 @@ fn next(parser: &mut Parser<impl BufRead>) -> Result<Option<Page>, Error> {
                                 model = Some(parse_text(parser, &model)?)
                             }
                             RevisionChildElement::Text => text = Some(parse_text(parser, &text)?),
-                            RevisionChildElement::Id => id = Some(parse_u64(parser, &text)?),
+                            RevisionChildElement::Id => id = Some(parse_u32(parser, &text)?),
                             RevisionChildElement::Unknown => skip_element(parser)?,
                         }
                     }
@@ -360,9 +360,9 @@ fn parse_text(
     }
 }
 
-fn parse_u64(parser: &mut Parser<impl BufRead>, output: &Option<impl Sized>) -> Result<u64, Error> {
+fn parse_u32(parser: &mut Parser<impl BufRead>, output: &Option<impl Sized>) -> Result<u32, Error> {
     let text = parse_text(parser, &output)?;
-    text.parse::<u64>()
+    text.parse::<u32>()
         .map_err(|_| Error::ParseInt(parser.reader.buffer_position()))
 }
 

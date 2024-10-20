@@ -41,7 +41,8 @@ fn main() {
             text,
             title,
             id,
-        })) => format == "beta" && model == "gamma" && text == "delta" && title == "alpha" && id == 1,
+        })) =>
+            format == "beta" && model == "gamma" && text == "delta" && title == "alpha" && id == 1,
         _ => false,
     });
     assert!(match parser.next() {
